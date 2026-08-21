@@ -1,0 +1,54 @@
+# Documentacion
+enunciado-guia.md
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.plan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Variables con posibles secretos
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Archivos locales y credenciales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials
+.aws/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# IDE y sistema operativo
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Resultados de tests y seguridad
+test-results/
+playwright-report/
+.trivy/
+
+# .terraform.lock.hcl no se ignora porque debe versionarse
