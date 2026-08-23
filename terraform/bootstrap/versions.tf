@@ -7,7 +7,7 @@
 
 terraform {
   backend "s3" {
-  bucket       = "ticketflow-tfstate-989367328179-us-east-1"
+  bucket       = "ticketflow-tfstate-654654228171-us-east-1"
   key          = "bootstrap/terraform.tfstate"
   region       = "us-east-1"
   encrypt      = true
