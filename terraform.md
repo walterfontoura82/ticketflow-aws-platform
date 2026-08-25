@@ -56,7 +56,7 @@ Archivo: `terraform/environments/dev/backend.tf`.
 ```hcl
 terraform {
   backend "s3" {
-    bucket       = "ticketflow-tfstate-966299413569-us-east-1"
+    bucket       = "ticketflow-tfstate-730335523130-us-east-1"
     key          = "environments/dev/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
@@ -514,3 +514,22 @@ vpc_id = module.networking.vpc_id
 ---
 
 Este documento debe ampliarse cuando se incorporen security groups, RDS, DynamoDB, EKS, ECS, Lambda y frontend, agregando los inputs, outputs y dependencias de cada módulo.
+
+## Cambio de cuenta sandbox
+
+Los sandboxes temporales entregan un Account ID nuevo cuando expiran. El
+script `scripts/switch-sandbox-account.sh` automatiza la reconstrucción segura
+del backend:
+
+```bash
+./scripts/switch-sandbox-account.sh NUEVO_ACCOUNT_ID
+```
+
+El script valida que AWS CLI esté autenticado en esa cuenta y en `us-east-1`,
+actualiza referencias al bucket, conserva artefactos locales anteriores,
+genera un plan de exactamente seis recursos y exige escribir `CREATE` antes
+del `apply`. Después migra el state local a S3 y reinicializa `dev`.
+
+El script no ejecuta `git add`, no crea commits y no vuelve a desplegar la red
+de `dev`. Al terminar se deben revisar los cambios y generar un plan nuevo del
+ambiente antes de aplicar infraestructura.

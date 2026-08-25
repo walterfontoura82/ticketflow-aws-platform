@@ -7,6 +7,8 @@ enunciado-guia.md
 *.tfstate.*
 *.tfplan
 *.plan
+*.tf.disabled
+.sandbox-recovery/
 crash.log
 crash.*.log
 override.tf
