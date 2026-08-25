@@ -16,3 +16,20 @@ module "networking" {
   enable_nat_gateway       = var.enable_nat_gateway
   single_nat_gateway       = var.single_nat_gateway
 }
+
+/*
+Security groups depende de networking porque necesita:
+
+- La VPC donde se crearán los grupos.
+- El CIDR utilizado por la regla de VPC Endpoints.
+
+Las referencias module.networking.* crean la dependencia automáticamente.
+*/
+module "security_groups" {
+  source = "../../modules/security-groups"
+
+  project_name   = var.project_name
+  environment    = var.environment
+  vpc_id         = module.networking.vpc_id
+  vpc_cidr_block = module.networking.vpc_cidr_block
+}
