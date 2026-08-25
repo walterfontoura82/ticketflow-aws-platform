@@ -33,3 +33,40 @@ module "security_groups" {
   vpc_id         = module.networking.vpc_id
   vpc_cidr_block = module.networking.vpc_cidr_block
 }
+
+
+/*
+RDS depende de dos módulos:
+
+- networking entrega las subredes privadas de base de datos.
+- security_groups entrega la identidad de red que permite PostgreSQL
+  solamente desde EKS y la EC2 administrativa.
+
+Estas referencias crean las dependencias automáticamente.
+*/
+
+/*
+
+networking.private_db_subnet_ids ─┐
+                                  ├──► module.rds
+security_groups.rds_sg_id ────────┘
+
+*/
+module "rds" {
+  source = "../../modules/rds"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  database_subnet_ids = module.networking.private_db_subnet_ids
+  security_group_id   = module.security_groups.rds_security_group_id
+
+  # Configuración económica para el laboratorio.
+  instance_class          = "db.t4g.micro"
+  allocated_storage       = 20
+  max_allocated_storage   = 100
+  multi_az                = false
+  backup_retention_period = 1
+  deletion_protection     = false
+  skip_final_snapshot     = true
+}
+

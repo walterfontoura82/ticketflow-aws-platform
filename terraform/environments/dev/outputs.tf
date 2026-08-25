@@ -67,3 +67,41 @@ output "vpc_endpoints_security_group_id" {
   description = "Security group de VPC Interface Endpoints."
   value       = module.security_groups.vpc_endpoints_security_group_id
 }
+
+
+/*
+Información de RDS visible desde el root module.
+
+El secreto se expone únicamente como ARN. El valor de la contraseña
+permanece almacenado en Secrets Manager.
+*/
+
+output "rds_instance_id" {
+  description = "Identificador de la instancia RDS."
+  value       = module.rds.db_instance_id
+}
+
+output "rds_address" {
+  description = "Nombre DNS privado de RDS."
+  value       = module.rds.db_address
+}
+
+output "rds_endpoint" {
+  description = "Endpoint privado de PostgreSQL."
+  value       = module.rds.db_endpoint
+}
+
+output "rds_port" {
+  description = "Puerto de PostgreSQL."
+  value       = module.rds.db_port
+}
+
+output "rds_database_name" {
+  description = "Nombre de la base de datos."
+  value       = module.rds.database_name
+}
+
+output "rds_master_user_secret_arn" {
+  description = "ARN del secreto maestro administrado por RDS."
+  value       = module.rds.master_user_secret_arn
+}
