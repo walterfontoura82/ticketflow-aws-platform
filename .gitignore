@@ -54,3 +54,7 @@ playwright-report/
 .trivy/
 
 # .terraform.lock.hcl no se ignora porque debe versionarse
+
+# Documentación personal
+enunciado-guia.md
+terraform.md
