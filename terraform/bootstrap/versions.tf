@@ -6,13 +6,15 @@
 
 
 terraform {
+  
   backend "s3" {
-  bucket       = "ticketflow-tfstate-654654228171-us-east-1"
+  bucket       = "ticketflow-tfstate-966299413569-us-east-1"
   key          = "bootstrap/terraform.tfstate"
   region       = "us-east-1"
   encrypt      = true
   use_lockfile = true
   }
+  
   required_version = ">= 1.15.0, < 2.0.0"
 
   required_providers {
