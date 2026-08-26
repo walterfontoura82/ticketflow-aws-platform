@@ -134,3 +134,30 @@ output "admin_ec2_iam_role_arn" {
   description = "ARN del rol IAM asociado con la instancia administrativa."
   value       = module.ec2_admin.iam_role_arn
 }
+
+/*
+Información de DynamoDB expuesta por el ambiente dev.
+
+Estos valores permiten consultar la tabla y crear posteriormente políticas IAM
+sin repetir nombres o ARN manualmente.
+*/
+
+output "dynamodb_table_name" {
+  description = "Nombre de la tabla DynamoDB principal de dev."
+  value       = module.dynamodb.table_name
+}
+
+output "dynamodb_table_arn" {
+  description = "ARN de la tabla DynamoDB principal de dev."
+  value       = module.dynamodb.table_arn
+}
+
+output "dynamodb_table_id" {
+  description = "Identificador de la tabla DynamoDB principal de dev."
+  value       = module.dynamodb.table_id
+}
+
+output "dynamodb_gsi1_name" {
+  description = "Nombre del índice secundario global de la tabla."
+  value       = module.dynamodb.gsi1_name
+}

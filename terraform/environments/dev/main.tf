@@ -96,3 +96,31 @@ module "ec2_admin" {
   instance_type    = "t3.micro"
   root_volume_size = 8
 }
+
+/*
+Tabla DynamoDB principal del ambiente dev.
+
+El ambiente entrega los valores generales al módulo y decide las protecciones
+que corresponden a este entorno.
+
+En producción deletion_protection_enabled debería ser true. En este sandbox
+queda false para permitir destruir la infraestructura cuando expire.
+
+Flujo:
+var.project_name y var.environment
+  → module.dynamodb
+  → variables del módulo
+  → nombre de aws_dynamodb_table.this
+  → ticketflow-dev-application
+source indica dónde está el módulo local. Terraform leerá sus archivos main.tf, variables.tf y outputs.tf como una unidad.
+
+*/
+module "dynamodb" {
+  source = "../../modules/dynamodb"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  point_in_time_recovery_enabled = true
+  deletion_protection_enabled    = false
+}
