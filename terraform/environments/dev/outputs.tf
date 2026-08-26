@@ -204,3 +204,60 @@ output "ticket_generation_dlq_arn" {
   description = "ARN de la Dead Letter Queue."
   value       = module.queues.dead_letter_queue_arn
 }
+
+/*
+DynamoDB Streams y Lambda de auditoría.
+
+Estos valores permiten verificar el flujo, consultar logs, probar la función y
+crear alarmas posteriormente.
+*/
+
+output "dynamodb_stream_arn" {
+  description = "ARN del stream de la tabla DynamoDB."
+  value       = module.dynamodb.stream_arn
+}
+
+output "dynamodb_stream_label" {
+  description = "Etiqueta de la versión activa del stream."
+  value       = module.dynamodb.stream_label
+}
+
+output "lambda_audit_function_name" {
+  description = "Nombre de la función Lambda de auditoría."
+  value       = module.lambda_audit.function_name
+}
+
+output "lambda_audit_function_arn" {
+  description = "ARN de la función Lambda de auditoría."
+  value       = module.lambda_audit.function_arn
+}
+
+output "lambda_audit_execution_role_arn" {
+  description = "ARN del rol IAM de ejecución de la Lambda."
+  value       = module.lambda_audit.execution_role_arn
+}
+
+output "lambda_audit_log_group_name" {
+  description = "Nombre del grupo de logs de la Lambda."
+  value       = module.lambda_audit.log_group_name
+}
+
+output "lambda_audit_event_source_mapping_uuid" {
+  description = "UUID de la asociación entre DynamoDB Streams y Lambda."
+  value       = module.lambda_audit.event_source_mapping_uuid
+}
+
+output "lambda_audit_failure_queue_name" {
+  description = "Nombre de la cola de eventos fallidos de la Lambda."
+  value       = module.lambda_audit.failure_queue_name
+}
+
+output "lambda_audit_failure_queue_url" {
+  description = "URL de la cola de eventos fallidos de la Lambda."
+  value       = module.lambda_audit.failure_queue_url
+}
+
+output "lambda_audit_failure_queue_arn" {
+  description = "ARN de la cola de eventos fallidos de la Lambda."
+  value       = module.lambda_audit.failure_queue_arn
+}

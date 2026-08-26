@@ -23,6 +23,15 @@ Este módulo creará una sola tabla, pero con capacidad para distintos patrones 
 resource "aws_dynamodb_table" "this" {
   name         = "${var.project_name}-${var.environment}-application"
   billing_mode = "PAY_PER_REQUEST"
+  /*
+  DynamoDB Streams publica un evento cada vez que se inserta, modifica o elimina
+  un elemento.
+
+  KEYS_ONLY incluye únicamente PK y SK. La Lambda de auditoría no necesita el
+  contenido completo, lo que reduce la exposición de información sensible.
+  */
+  stream_enabled   = true
+  stream_view_type = "KEYS_ONLY"
 
 
   /*

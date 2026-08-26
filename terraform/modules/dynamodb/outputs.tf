@@ -27,3 +27,24 @@ output "gsi1_name" {
   description = "Nombre del índice secundario global principal."
   value       = "GSI1"
 }
+
+/*
+ARN del stream que utilizará Lambda como origen de eventos.
+
+Este ARN identifica una versión concreta del stream de la tabla y permite
+crear tanto la política IAM como el Event Source Mapping.
+
+aws_dynamodb_table.this.stream_arn
+  → module.dynamodb.stream_arn
+  → module.lambda.dynamodb_stream_arn
+  → política IAM y Event Source Mapping
+*/
+output "stream_arn" {
+  description = "ARN del stream de cambios de la tabla DynamoDB."
+  value       = aws_dynamodb_table.this.stream_arn
+}
+
+output "stream_label" {
+  description = "Etiqueta temporal que identifica la versión actual del stream."
+  value       = aws_dynamodb_table.this.stream_label
+}

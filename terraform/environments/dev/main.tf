@@ -143,3 +143,34 @@ module "queues" {
   max_receive_count             = 5
   receive_wait_time_seconds     = 20
 }
+
+/*
+Lambda de auditoría de DynamoDB.
+
+La dependencia se forma automáticamente porque el módulo Lambda recibe el ARN
+del stream producido por module.dynamodb.
+
+abspath convierte la ruta del ZIP en una ruta absoluta para evitar diferencias
+según el directorio desde el que se ejecute Terraform.
+*/
+module "lambda_audit" {
+  source = "../../modules/lambda"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  dynamodb_stream_arn = module.dynamodb.stream_arn
+
+  package_file = abspath(
+    "${path.root}/../../../services/lambda-audit/build/lambda-audit.zip"
+  )
+
+  runtime         = "python3.12"
+  handler         = "handler.lambda_handler"
+  memory_size     = 128
+  timeout_seconds = 30
+
+  log_retention_days              = 14
+  batch_size                      = 100
+  maximum_batching_window_seconds = 5
+}
