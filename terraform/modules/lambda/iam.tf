@@ -2,15 +2,7 @@
 Política de confianza.
 
 Permite que únicamente el servicio AWS Lambda asuma este rol. No concede
-permisos sobre recursos; solamente establece quién puede utilizar la identidad.
-Por qué usamos una política propia:
-- Evitamos conceder permisos amplios mediante políticas administradas genéricas.
-- La Lambda no puede escribir ni borrar elementos de DynamoDB.
-- Solo puede leer el stream.
-- No tiene acceso a RDS, SQS, S3 ni Secrets Manager.
-- X-Ray y ListStreams requieren Resource = "*", pero con acciones muy limitadas.
-local.function_name se declarará en main.tf; Terraform analiza todos los archivos del módulo juntos, sin importar el orden en que los creemos.
-
+permisos sobre otros recursos.
 */
 data "aws_iam_policy_document" "assume_role" {
   statement {
@@ -23,27 +15,11 @@ data "aws_iam_policy_document" "assume_role" {
       identifiers = ["lambda.amazonaws.com"]
     }
   }
-
-  /*
-    Permite enviar únicamente a la cola de fallos propia de esta Lambda.
-
-    Este permiso es necesario para destination_config del Event Source Mapping.
-    No concede acceso a otras colas SQS.
-    */
-  statement {
-    sid    = "SendFailedEventsToQueue"
-    effect = "Allow"
-
-    actions = [
-      "sqs:SendMessage",
-    ]
-
-    resources = [
-      aws_sqs_queue.stream_failures.arn,
-    ]
-  }
 }
 
+/*
+Rol que AWS Lambda asumirá durante cada ejecución.
+*/
 resource "aws_iam_role" "this" {
   name               = "${local.function_name}-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
@@ -56,14 +32,12 @@ resource "aws_iam_role" "this" {
 /*
 Política de mínimo privilegio de la Lambda.
 
-Separamos los permisos por responsabilidad:
-
-- CloudWatch Logs: escribir logs en el grupo concreto de esta función.
-- DynamoDB Streams: leer solamente el stream configurado.
-- ListStreams: AWS no permite restringir esta acción a un ARN específico.
-- X-Ray: publicar segmentos de trazabilidad.
+Cada statement representa una responsabilidad independiente.
 */
 data "aws_iam_policy_document" "execution" {
+  /*
+  Permite escribir solamente en el grupo de logs creado para esta función.
+  */
   statement {
     sid    = "WriteFunctionLogs"
     effect = "Allow"
@@ -78,6 +52,9 @@ data "aws_iam_policy_document" "execution" {
     ]
   }
 
+  /*
+  Permite leer registros del stream concreto de DynamoDB.
+  */
   statement {
     sid    = "ReadDynamoDBStream"
     effect = "Allow"
@@ -93,6 +70,10 @@ data "aws_iam_policy_document" "execution" {
     ]
   }
 
+  /*
+  ListStreams no admite una restricción útil a un ARN individual.
+  La acción permitida sigue siendo únicamente de lectura.
+  */
   statement {
     sid       = "ListDynamoDBStreams"
     effect    = "Allow"
@@ -100,6 +81,9 @@ data "aws_iam_policy_document" "execution" {
     resources = ["*"]
   }
 
+  /*
+  Permite publicar telemetría en AWS X-Ray.
+  */
   statement {
     sid    = "WriteXRayTelemetry"
     effect = "Allow"
@@ -111,8 +95,30 @@ data "aws_iam_policy_document" "execution" {
 
     resources = ["*"]
   }
+
+  /*
+  Permite enviar únicamente a la cola de fallos propia de esta Lambda.
+  */
+  statement {
+    sid    = "SendFailedEventsToQueue"
+    effect = "Allow"
+
+    actions = [
+      "sqs:SendMessage",
+    ]
+
+    resources = [
+      aws_sqs_queue.stream_failures.arn,
+    ]
+  }
 }
 
+/*
+Política inline asociada al rol.
+
+Una política inline queda ligada al ciclo de vida de este rol y evita crear
+una política IAM reutilizable innecesaria.
+*/
 resource "aws_iam_role_policy" "execution" {
   name   = "${local.function_name}-execution"
   role   = aws_iam_role.this.id
