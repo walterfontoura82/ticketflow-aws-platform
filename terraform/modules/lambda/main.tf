@@ -63,10 +63,12 @@ resource "aws_lambda_function" "this" {
   timeout     = var.timeout_seconds
 
   /*
-  Limita el máximo de ejecuciones simultáneas para controlar costos y evitar
-  que una ráfaga del stream consuma toda la concurrencia de la cuenta.
-  */
-  reserved_concurrent_executions = 2
+Permite limitar la concurrencia cuando la cuenta lo autoriza.
+
+Si el valor es null, Terraform omite PutFunctionConcurrency. El sandbox actual
+lo requiere porque una Service Control Policy deniega explícitamente esa API.
+*/
+  reserved_concurrent_executions = var.reserved_concurrent_executions
 
   environment {
     variables = {

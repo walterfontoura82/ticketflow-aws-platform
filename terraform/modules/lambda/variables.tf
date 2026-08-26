@@ -88,3 +88,27 @@ variable "maximum_batching_window_seconds" {
   type        = number
   default     = 5
 }
+
+/*
+Límite de concurrencia reservada.
+
+null indica que Terraform no configura concurrencia reservada. Esto permite
+usar el módulo en sandboxes donde una SCP prohíbe PutFunctionConcurrency.
+
+En una cuenta de producción sin esa restricción se puede establecer, por
+ejemplo, el valor 2.
+*/
+variable "reserved_concurrent_executions" {
+  description = "Concurrencia reservada de Lambda; null deja el valor sin administrar."
+  type        = number
+  default     = null
+  nullable    = true
+
+  validation {
+    condition = (
+      var.reserved_concurrent_executions == null ||
+      var.reserved_concurrent_executions >= 0
+    )
+    error_message = "La concurrencia reservada debe ser null o un número mayor o igual a cero."
+  }
+}
