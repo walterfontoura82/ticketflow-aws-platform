@@ -105,3 +105,32 @@ output "rds_master_user_secret_arn" {
   description = "ARN del secreto maestro administrado por RDS."
   value       = module.rds.master_user_secret_arn
 }
+
+/*
+Datos de la instancia administrativa.
+
+El instance ID será necesario para iniciar sesiones y túneles mediante
+AWS Systems Manager. La IP privada se muestra solamente como referencia:
+no se utiliza para conectarnos directamente desde Internet.
+
+aws_instance.this.id
+  → output.instance_id del módulo ec2-admin
+  → module.ec2_admin.instance_id
+  → output.admin_ec2_instance_id del ambiente dev
+
+*/
+
+output "admin_ec2_instance_id" {
+  description = "ID de la instancia EC2 administrativa utilizada como puente SSM."
+  value       = module.ec2_admin.instance_id
+}
+
+output "admin_ec2_private_ip" {
+  description = "Dirección IP privada de la instancia administrativa."
+  value       = module.ec2_admin.private_ip
+}
+
+output "admin_ec2_iam_role_arn" {
+  description = "ARN del rol IAM asociado con la instancia administrativa."
+  value       = module.ec2_admin.iam_role_arn
+}

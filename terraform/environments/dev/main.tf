@@ -70,3 +70,29 @@ module "rds" {
   skip_final_snapshot     = true
 }
 
+/*
+Instancia administrativa privada.
+
+Se ubica en la primera subnet privada de aplicaciones y no recibe una IP
+pública. La administración se realiza mediante AWS Systems Manager (SSM),
+sin abrir el puerto 22 ni utilizar claves SSH.
+
+Su Security Group permite:
+
+- Salida HTTPS para comunicarse con Systems Manager.
+- Salida al puerto 5432 del Security Group de RDS.
+
+Esta instancia servirá como puente para acceder desde nuestra PC al RDS
+privado mediante un túnel de Session Manager.
+*/
+module "ec2_admin" {
+  source = "../../modules/ec2-admin"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  subnet_id         = module.networking.private_app_subnet_ids[0]
+  security_group_id = module.security_groups.admin_ec2_security_group_id
+
+  instance_type    = "t3.micro"
+  root_volume_size = 8
+}
