@@ -161,3 +161,46 @@ output "dynamodb_gsi1_name" {
   description = "Nombre del índice secundario global de la tabla."
   value       = module.dynamodb.gsi1_name
 }
+
+/*
+Información de las colas SQS del ambiente dev.
+
+Las aplicaciones consumirán las URL. Los módulos IAM y de observabilidad
+utilizarán los ARN y nombres.
+
+aws_sqs_queue.ticket_generation.url
+  → output del módulo queues
+  → module.queues.ticket_generation_queue_url
+  → output del ambiente dev
+
+*/
+
+output "ticket_generation_queue_name" {
+  description = "Nombre de la cola principal de generación de entradas."
+  value       = module.queues.ticket_generation_queue_name
+}
+
+output "ticket_generation_queue_url" {
+  description = "URL de la cola principal de generación de entradas."
+  value       = module.queues.ticket_generation_queue_url
+}
+
+output "ticket_generation_queue_arn" {
+  description = "ARN de la cola principal de generación de entradas."
+  value       = module.queues.ticket_generation_queue_arn
+}
+
+output "ticket_generation_dlq_name" {
+  description = "Nombre de la Dead Letter Queue."
+  value       = module.queues.dead_letter_queue_name
+}
+
+output "ticket_generation_dlq_url" {
+  description = "URL de la Dead Letter Queue."
+  value       = module.queues.dead_letter_queue_url
+}
+
+output "ticket_generation_dlq_arn" {
+  description = "ARN de la Dead Letter Queue."
+  value       = module.queues.dead_letter_queue_arn
+}

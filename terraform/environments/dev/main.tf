@@ -124,3 +124,22 @@ module "dynamodb" {
   point_in_time_recovery_enabled = true
   deletion_protection_enabled    = false
 }
+
+/*
+Colas de procesamiento asíncrono.
+
+La API enviará trabajos a la cola principal y los workers de ECS/Fargate los
+consumirán. Los mensajes que fallen cinco veces pasarán a la DLQ.
+*/
+module "queues" {
+  source = "../../modules/queues"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  visibility_timeout_seconds    = 120
+  message_retention_seconds     = 345600
+  dlq_message_retention_seconds = 1209600
+  max_receive_count             = 5
+  receive_wait_time_seconds     = 20
+}
