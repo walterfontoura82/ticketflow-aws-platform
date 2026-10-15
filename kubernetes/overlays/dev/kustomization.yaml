@@ -33,7 +33,7 @@ replacements:
   - source:
       kind: ConfigMap
       name: ticketflow-runtime
-      fieldPath: data.EKS_API_SECURITY_GROUP_ID
+      
     targets:
       - select:
           kind: SecurityGroupPolicy

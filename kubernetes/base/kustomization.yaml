@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - service-account.yaml
-  - security-group-policy.yaml
   - migration-job.yaml
   - deployment.yaml
   - service.yaml

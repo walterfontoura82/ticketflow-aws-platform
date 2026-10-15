@@ -70,5 +70,5 @@ variable "worker_image_tag" {
 variable "eks_public_access_cidrs" {
   description = "CIDR autorizados para acceder al endpoint público de EKS."
   type        = list(string)
-  default     = ["45.191.81.236/32"]
+  default     = ["45.191.81.229/32"]
 }
