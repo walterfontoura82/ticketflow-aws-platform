@@ -261,3 +261,30 @@ output "lambda_audit_failure_queue_arn" {
   description = "ARN de la cola de eventos fallidos de la Lambda."
   value       = module.lambda_audit.failure_queue_arn
 }
+
+/*
+Repositorios ECR del ambiente dev.
+
+Las URLs se usarán para publicar imágenes y referenciarlas desde ECS/EKS.
+Los ARN se utilizarán en políticas IAM.
+*/
+
+output "ecr_repository_names" {
+  description = "Mapa de nombres lógicos a nombres completos de repositorio ECR."
+  value       = module.ecr.repository_names
+}
+
+output "ecr_repository_urls" {
+  description = "Mapa de nombres lógicos a URLs de repositorio ECR."
+  value       = module.ecr.repository_urls
+}
+
+output "ecr_repository_arns" {
+  description = "Mapa de nombres lógicos a ARN de repositorio ECR."
+  value       = module.ecr.repository_arns
+}
+
+output "ecr_registry_id" {
+  description = "ID del registro ECR del ambiente."
+  value       = module.ecr.registry_id
+}

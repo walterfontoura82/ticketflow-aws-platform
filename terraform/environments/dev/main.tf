@@ -174,3 +174,30 @@ module "lambda_audit" {
   batch_size                      = 100
   maximum_batching_window_seconds = 5
 }
+
+/*
+Repositorios privados de imágenes.
+
+API se utilizará posteriormente desde EKS.
+Worker se utilizará desde ECS/Fargate.
+
+force_delete queda habilitado solamente porque dev es un sandbox descartable.
+En producción debe ser false para evitar borrar repositorios con imágenes.
+*/
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  repository_names = [
+    "api",
+    "worker",
+  ]
+
+  image_tag_mutability           = "IMMUTABLE"
+  scan_on_push                   = true
+  max_image_count                = 20
+  untagged_image_expiration_days = 7
+  force_delete                   = true
+}
