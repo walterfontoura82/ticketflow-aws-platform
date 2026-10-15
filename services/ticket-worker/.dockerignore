@@ -1,0 +1,24 @@
+# Control de versiones
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Tests y cobertura: se ejecutan antes del build
+tests/
+coverage/
+.coverage
+
+# Archivos locales
+.env
+.env.*
+*.log
+
+# Documentación y metadatos del editor
+README.md
+.vscode/
+.idea/

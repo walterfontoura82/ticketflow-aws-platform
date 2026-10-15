@@ -1,0 +1,2 @@
+# SDK oficial de AWS utilizado por el contenedor para SQS y DynamoDB.
+boto3==1.43.114
