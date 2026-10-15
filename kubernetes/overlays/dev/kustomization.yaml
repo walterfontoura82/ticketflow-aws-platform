@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: ticketflow-runtime
+    namespace: ticketflow
+    envs:
+      - runtime.env
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: ticketflow-runtime
+      fieldPath: data.API_IMAGE
+    targets:
+      - select:
+          kind: Deployment
+          name: ticketflow-api
+        fieldPaths:
+          - spec.template.spec.containers.[name=api].image
+      - select:
+          kind: Job
+          name: ticketflow-api-migration
+        fieldPaths:
+          - spec.template.spec.containers.[name=migration].image
+
+  - source:
+      kind: ConfigMap
+      name: ticketflow-runtime
+      fieldPath: data.EKS_API_SECURITY_GROUP_ID
+    targets:
+      - select:
+          kind: SecurityGroupPolicy
+          name: ticketflow-api
+        fieldPaths:
+          - spec.securityGroups.groupIds.0

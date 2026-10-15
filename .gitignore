@@ -58,3 +58,6 @@ playwright-report/
 # Documentación personal
 enunciado-guia.md
 terraform.md
+
+# Configuración Kubernetes generada para cada sandbox
+kubernetes/overlays/*/runtime.env
