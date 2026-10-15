@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Etapa de build: instala dependencias fuera de la imagen final.
-FROM python:3.12.12-slim-bookworm AS builder
+FROM python:3.12.12-slim-trixie AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
@@ -16,7 +16,7 @@ RUN python -m pip install \
 
 
 # Etapa de runtime: contiene solamente Python, dependencias y aplicación.
-FROM python:3.12.12-slim-bookworm AS runtime
+FROM python:3.12.12-slim-trixie AS runtime
 
 LABEL org.opencontainers.image.title="TicketFlow ticket worker" \
       org.opencontainers.image.description="Worker ECS/Fargate para generación asíncrona de entradas" \
