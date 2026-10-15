@@ -201,3 +201,21 @@ module "ecr" {
   untagged_image_expiration_days = 7
   force_delete                   = true
 }
+module "ecs_workers" {
+  source = "../../modules/ecs-workers"
+
+  project_name = var.project_name
+  environment  = var.environment
+  aws_region   = var.aws_region
+
+  container_image = "${module.ecr.repository_urls["worker"]}:${var.worker_image_tag}"
+
+  private_subnet_ids = module.networking.private_app_subnet_ids
+  security_group_id  = module.security_groups.ecs_worker_security_group_id
+
+  queue_arn = module.queues.ticket_generation_queue_arn
+  queue_url = module.queues.ticket_generation_queue_url
+
+  dynamodb_table_arn  = module.dynamodb.table_arn
+  dynamodb_table_name = module.dynamodb.table_name
+}

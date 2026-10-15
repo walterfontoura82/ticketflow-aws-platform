@@ -288,3 +288,18 @@ output "ecr_registry_id" {
   description = "ID del registro ECR del ambiente."
   value       = module.ecr.registry_id
 }
+output "ecs_worker_cluster_name" {
+  value = module.ecs_workers.cluster_name
+}
+
+output "ecs_worker_service_name" {
+  value = module.ecs_workers.service_name
+}
+
+output "ecs_worker_task_definition_arn" {
+  value = module.ecs_workers.task_definition_arn
+}
+
+output "ecs_worker_log_group_name" {
+  value = module.ecs_workers.log_group_name
+}

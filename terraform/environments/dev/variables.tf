@@ -62,3 +62,8 @@ variable "single_nat_gateway" {
   type        = bool
   default     = true
 }
+variable "worker_image_tag" {
+  description = "Tag inmutable de la imagen del worker."
+  type        = string
+  default     = "15d1ac428489-amd64"
+}
