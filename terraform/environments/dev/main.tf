@@ -219,3 +219,18 @@ module "ecs_workers" {
   dynamodb_table_arn  = module.dynamodb.table_arn
   dynamodb_table_name = module.dynamodb.table_name
 }
+module "eks" {
+  source = "../../modules/eks"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  kubernetes_version = "1.36"
+
+  private_subnet_ids  = module.networking.private_app_subnet_ids
+  public_access_cidrs = var.eks_public_access_cidrs
+
+  node_instance_types = ["t3.medium"]
+  node_desired_size   = 2
+  node_min_size       = 1
+  node_max_size       = 3
+}

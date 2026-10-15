@@ -303,3 +303,22 @@ output "ecs_worker_task_definition_arn" {
 output "ecs_worker_log_group_name" {
   value = module.ecs_workers.log_group_name
 }
+output "eks_cluster_name" {
+  description = "Nombre del clúster EKS."
+  value       = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  description = "Endpoint de Kubernetes."
+  value       = module.eks.cluster_endpoint
+}
+
+output "eks_cluster_version" {
+  description = "Versión de Kubernetes."
+  value       = module.eks.cluster_version
+}
+
+output "eks_node_group_name" {
+  description = "Nombre del node group."
+  value       = module.eks.node_group_name
+}
