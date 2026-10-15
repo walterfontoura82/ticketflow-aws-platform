@@ -5,7 +5,7 @@ migrar después ese state a S3.
 */
 terraform {
   backend "s3" {
-    bucket       = "ticketflow-tfstate-414691912724-us-east-1"
+    bucket       = "ticketflow-tfstate-682881510569-us-east-1"
     key          = "bootstrap/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
