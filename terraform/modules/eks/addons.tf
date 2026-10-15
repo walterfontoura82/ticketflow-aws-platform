@@ -20,6 +20,12 @@ resource "aws_eks_addon" "initial" {
   cluster_name  = aws_eks_cluster.this.name
   addon_name    = each.value
   addon_version = data.aws_eks_addon_version.initial[each.key].version
+  configuration_values = each.key == "vpc-cni" ? jsonencode({
+    env = {
+      ENABLE_POD_ENI                    = "true"
+      POD_SECURITY_GROUP_ENFORCING_MODE = "standard"
+    }
+  }) : null
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"

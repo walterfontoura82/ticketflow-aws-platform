@@ -229,6 +229,9 @@ module "eks" {
   private_subnet_ids  = module.networking.private_app_subnet_ids
   public_access_cidrs = var.eks_public_access_cidrs
 
+  api_rds_secret_arn = module.rds.master_user_secret_arn
+  api_queue_arn      = module.queues.ticket_generation_queue_arn
+
   node_instance_types = ["t3.medium"]
   node_desired_size   = 2
   node_min_size       = 1

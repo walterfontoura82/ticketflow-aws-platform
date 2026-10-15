@@ -322,3 +322,7 @@ output "eks_node_group_name" {
   description = "Nombre del node group."
   value       = module.eks.node_group_name
 }
+output "eks_api_pod_role_arn" {
+  description = "Rol Pod Identity de la API."
+  value       = module.eks.api_pod_role_arn
+}

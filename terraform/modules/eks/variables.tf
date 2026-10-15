@@ -52,3 +52,24 @@ variable "node_max_size" {
   type        = number
   default     = 3
 }
+variable "api_namespace" {
+  description = "Namespace Kubernetes de la API."
+  type        = string
+  default     = "ticketflow"
+}
+
+variable "api_service_account_name" {
+  description = "ServiceAccount Kubernetes de la API."
+  type        = string
+  default     = "ticketflow-api"
+}
+
+variable "api_rds_secret_arn" {
+  description = "Secreto RDS que puede leer la API."
+  type        = string
+}
+
+variable "api_queue_arn" {
+  description = "Cola SQS donde la API puede publicar."
+  type        = string
+}

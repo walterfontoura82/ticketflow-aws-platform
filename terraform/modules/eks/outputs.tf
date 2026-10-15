@@ -32,3 +32,7 @@ output "node_role_arn" {
   description = "ARN del rol IAM utilizado por los nodos."
   value       = aws_iam_role.nodes.arn
 }
+output "api_pod_role_arn" {
+  description = "Rol IAM asociado al ServiceAccount de la API."
+  value       = aws_iam_role.api_pod.arn
+}
