@@ -326,3 +326,17 @@ output "eks_api_pod_role_arn" {
   description = "Rol Pod Identity de la API."
   value       = module.eks.api_pod_role_arn
 }
+output "frontend_bucket_name" {
+  description = "Bucket de artefactos del frontend."
+  value       = module.frontend.bucket_name
+}
+
+output "frontend_distribution_id" {
+  description = "ID de la distribución CloudFront."
+  value       = module.frontend.distribution_id
+}
+
+output "frontend_url" {
+  description = "URL HTTPS pública de TicketFlow."
+  value       = module.frontend.website_url
+}
