@@ -23,7 +23,8 @@ function App() {
     setError('')
     setReservation(null)
 
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
 
     try {
       const response = await fetch('/api/v1/reservations', {
@@ -42,7 +43,7 @@ function App() {
       }
 
       setReservation(await response.json())
-      event.currentTarget.reset()
+      formElement.reset()
     } catch (requestError) {
       setError(
         requestError instanceof Error
