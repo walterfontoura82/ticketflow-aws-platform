@@ -1,0 +1,164 @@
+#root {
+  min-height: 100vh;
+}
+
+main {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 5rem;
+  align-items: center;
+  padding: 5rem max(5vw, 2rem);
+  background:
+    radial-gradient(circle at 15% 20%, #12375a 0, transparent 35%),
+    #07111f;
+}
+
+.hero {
+  max-width: 720px;
+}
+
+.eyebrow,
+.section-label {
+  color: #43d9b3;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+h1 {
+  max-width: 680px;
+  margin: 1rem 0;
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+h2 {
+  margin: 0.35rem 0;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.hero > p,
+.muted {
+  color: #9eb0c7;
+  line-height: 1.7;
+}
+
+.hero > p {
+  max-width: 600px;
+  font-size: 1.1rem;
+}
+
+.architecture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+  margin-top: 2.5rem;
+}
+
+.architecture span {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #27425f;
+  border-radius: 0.55rem;
+  background: #0c1b2c;
+  font-size: 0.82rem;
+}
+
+.architecture b {
+  color: #43d9b3;
+}
+
+.card {
+  width: min(100%, 520px);
+  padding: 2rem;
+  border: 1px solid #213650;
+  border-radius: 1rem;
+  background: #0b1727;
+  box-shadow: 0 24px 80px #0008;
+}
+
+form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.45rem;
+  color: #b9c7d8;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  color: #f4f8fc;
+  border: 1px solid #2a405b;
+  border-radius: 0.55rem;
+  outline: none;
+  background: #07111f;
+}
+
+input:focus {
+  border-color: #43d9b3;
+  box-shadow: 0 0 0 3px #43d9b322;
+}
+
+button {
+  margin-top: 0.4rem;
+  padding: 0.9rem 1rem;
+  color: #03221a;
+  border: 0;
+  border-radius: 0.55rem;
+  background: #43d9b3;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.message {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.55rem;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.success {
+  color: #9ff3d6;
+  border: 1px solid #2b6b58;
+  background: #0d2a24;
+}
+
+.error {
+  color: #ffb4b4;
+  border: 1px solid #7a3838;
+  background: #321717;
+}
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    padding-block: 3rem;
+  }
+
+  h1 {
+    font-size: clamp(3rem, 14vw, 5rem);
+  }
+
+  .card {
+    width: 100%;
+  }
+}
