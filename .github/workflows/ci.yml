@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Scan repository with Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  python:
+    name: Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            services/ticket-api/requirements.txt
+            services/ticket-worker/requirements.txt
+      - name: Install application dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r services/ticket-api/requirements.txt -r services/ticket-worker/requirements.txt
+      - name: Test Lambda audit
+        env:
+          PYTHONPATH: services/lambda-audit/src
+        run: python -m unittest discover -s services/lambda-audit/tests -p 'test_*.py' -v
+      - name: Test TicketFlow API
+        env:
+          PYTHONPATH: services/ticket-api/src
+        run: python -m unittest discover -s services/ticket-api/tests -p 'test_*.py' -v
+      - name: Test TicketFlow worker
+        env:
+          PYTHONPATH: services/ticket-worker/src
+        run: python -m unittest discover -s services/ticket-worker/tests -p 'test_*.py' -v
+      - name: Package Lambda artifact
+        run: ./scripts/package-lambda-audit.sh
+
+  frontend:
+    name: Frontend quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/frontend
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: services/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  terraform:
+    name: Terraform validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.9
+          terraform_wrapper: false
+      - name: Check formatting
+        run: terraform fmt -check -recursive terraform
+      - name: Initialize and validate bootstrap
+        run: |
+          terraform -chdir=terraform/bootstrap init -backend=false
+          terraform -chdir=terraform/bootstrap validate
+      - name: Initialize and validate dev
+        run: |
+          terraform -chdir=terraform/environments/dev init -backend=false
+          terraform -chdir=terraform/environments/dev validate
+
+  kubernetes:
+    name: Kubernetes rendering
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.3
+      - name: Create non-secret CI runtime values
+        run: |
+          cat > kubernetes/overlays/dev/runtime.env <<'EOF'
+          API_IMAGE=111111111111.dkr.ecr.us-east-1.amazonaws.com/ticketflow-dev-api:ci
+          AWS_REGION=us-east-1
+          SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/111111111111/ticketflow-ci
+          RDS_SECRET_ARN=arn:aws:secretsmanager:us-east-1:111111111111:secret:ci
+          DATABASE_HOST=database.internal
+          DATABASE_PORT=5432
+          DATABASE_NAME=ticketflow
+          LOG_LEVEL=INFO
+          EKS_API_SECURITY_GROUP_ID=sg-0123456789abcdef0
+          EOF
+      - name: Render manifests
+        run: |
+          kubectl kustomize kubernetes/overlays/dev | tee /tmp/ticketflow-rendered.yaml >/dev/null
+          test -s /tmp/ticketflow-rendered.yaml
+
+  containers:
+    name: Container ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            context: services/ticket-api
+          - name: worker
+            context: services/ticket-worker
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate Dockerfile
+        run: docker build --check --file ${{ matrix.context }}/Dockerfile ${{ matrix.context }}
+      - name: Build image
+        run: |
+          docker build --platform linux/amd64 --provenance=false --sbom=false \
+            --tag ticketflow-${{ matrix.name }}:ci \
+            --file ${{ matrix.context }}/Dockerfile ${{ matrix.context }}
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: ticketflow-${{ matrix.name }}:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  infrastructure-security:
+    name: Infrastructure security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Scan Terraform and Kubernetes configuration
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: misconfig
+          severity: HIGH,CRITICAL
+          exit-code: "1"
