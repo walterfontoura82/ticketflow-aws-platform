@@ -118,7 +118,7 @@ jobs:
           DATABASE_PORT=5432
           DATABASE_NAME=ticketflow
           LOG_LEVEL=INFO
-          EKS_API_SECURITY_GROUP_ID=sg-0123456789abcdef0
+          EKS_API_SECURITY_GROUP_ID=sg-00000000000000000
           EOF
       - name: Render manifests
         run: |
