@@ -164,6 +164,9 @@ jobs:
         with:
           scan-type: fs
           scan-ref: .
+          skip-dirs: "**/.terraform"
+          skip-files: "**/*.tfplan"
           scanners: misconfig
           severity: HIGH,CRITICAL
+          trivyignores: .trivyignore.yaml
           exit-code: "1"

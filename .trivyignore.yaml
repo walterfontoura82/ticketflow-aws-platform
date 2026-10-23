@@ -1,0 +1,50 @@
+misconfigurations:
+  - id: AVD-AWS-0132
+    paths:
+      - "terraform/bootstrap/main.tf"
+    statement: "El sandbox usa cifrado S3 administrado por AWS; migrar a una CMK antes de producción."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0132
+    paths:
+      - "terraform/modules/frontend/main.tf"
+    statement: "El frontend usa cifrado S3 administrado por AWS; migrar a una CMK antes de producción."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0039
+    paths:
+      - "terraform/modules/eks/main.tf"
+    statement: "Agregar cifrado de secretos de EKS con KMS antes de promover el ambiente."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0040
+    paths:
+      - "terraform/modules/eks/main.tf"
+    statement: "El laboratorio permite acceso administrativo público restringido; CD usará endpoint privado y runner en AWS."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0041
+    paths:
+      - "terraform/modules/eks/main.tf"
+    statement: "El endpoint público está limitado temporalmente a una única IP /32 del administrador."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0011
+    paths:
+      - "terraform/modules/frontend/main.tf"
+    statement: "Agregar AWS WAF a CloudFront antes de promover el ambiente."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0164
+    paths:
+      - "terraform/modules/networking/main.tf"
+    statement: "Las subnets públicas alojan ALB y NAT; las cargas permanecen en subnets privadas."
+    expired_at: 2026-11-30
+
+  - id: AVD-AWS-0104
+    paths:
+      - "terraform/modules/security-groups/rules-alb-eks.tf"
+      - "terraform/modules/security-groups/rules-ecs-legacy.tf"
+      - "terraform/modules/security-groups/rules-rds.tf"
+    statement: "La salida HTTPS permite consumir APIs administradas de AWS; reemplazar por VPC endpoints donde corresponda."
+    expired_at: 2026-11-30
