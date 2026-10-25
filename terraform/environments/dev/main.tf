@@ -237,3 +237,29 @@ module "eks" {
   node_min_size       = 1
   node_max_size       = 3
 }
+
+/*
+Identidad federada utilizada por GitHub Actions para desplegar aplicaciones.
+No almacena access keys: GitHub obtiene credenciales temporales mediante OIDC.
+*/
+module "github_oidc" {
+  source = "../../modules/github-oidc"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  github_repository = "walterfontoura82/ticketflow-aws-platform"
+
+  ecr_repository_arns = values(module.ecr.repository_arns)
+
+  ecs_cluster_name       = module.ecs_workers.cluster_name
+  ecs_service_name       = module.ecs_workers.service_name
+  ecs_execution_role_arn = module.ecs_workers.execution_role_arn
+  ecs_task_role_arn      = module.ecs_workers.task_role_arn
+
+  eks_cluster_name = module.eks.cluster_name
+
+  frontend_bucket_name     = module.frontend.bucket_name
+  frontend_distribution_id = module.frontend.distribution_id
+
+  lambda_function_arn = module.lambda_audit.function_arn
+}

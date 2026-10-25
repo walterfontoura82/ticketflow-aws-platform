@@ -340,3 +340,13 @@ output "frontend_url" {
   description = "URL HTTPS pública de TicketFlow."
   value       = module.frontend.website_url
 }
+
+output "github_actions_oidc_provider_arn" {
+  description = "Proveedor OIDC utilizado por GitHub Actions."
+  value       = module.github_oidc.provider_arn
+}
+
+output "github_actions_cd_role_arn" {
+  description = "Rol IAM que asume el workflow de CD."
+  value       = module.github_oidc.role_arn
+}
