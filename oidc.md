@@ -348,6 +348,13 @@ El futuro workflow podrá seguir este orden:
 8. Invalidar CloudFront.
 9. Ejecutar verificaciones de salud posteriores al despliegue.
 
+Como el endpoint público de EKS está limitado a la IP del administrador, el
+runner hospedado por GitHub no puede acceder inicialmente. El workflow consulta
+su IP pública, la agrega temporalmente como `/32`, despliega y restaura la lista
+original en un paso `always()`. Es una solución práctica para el laboratorio.
+En producción se recomienda un runner privado dentro de la VPC para mantener el
+endpoint exclusivamente privado y eliminar esta apertura temporal.
+
 ## 10. Qué OIDC no automatiza
 
 OIDC resuelve la autenticación segura entre GitHub y AWS. Por sí solo no:

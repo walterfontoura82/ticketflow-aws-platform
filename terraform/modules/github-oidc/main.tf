@@ -110,10 +110,30 @@ data "aws_iam_policy_document" "deployment" {
   }
 
   statement {
-    sid       = "ConnectToEKS"
-    effect    = "Allow"
-    actions   = ["eks:DescribeCluster"]
+    sid    = "ConnectToEKS"
+    effect = "Allow"
+    actions = [
+      "eks:DescribeCluster",
+      "eks:UpdateClusterConfig",
+    ]
     resources = ["arn:${data.aws_partition.current.partition}:eks:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.eks_cluster_name}"]
+  }
+
+  statement {
+    sid    = "DiscoverRuntimeConfiguration"
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeSecurityGroups",
+      "rds:DescribeDBInstances",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "DiscoverTicketQueue"
+    effect    = "Allow"
+    actions   = ["sqs:GetQueueUrl"]
+    resources = [var.runtime_queue_arn]
   }
 
   statement {
@@ -135,10 +155,21 @@ data "aws_iam_policy_document" "deployment" {
   }
 
   statement {
-    sid       = "InvalidateFrontendCache"
-    effect    = "Allow"
-    actions   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
+    sid    = "InvalidateFrontendCache"
+    effect = "Allow"
+    actions = [
+      "cloudfront:CreateInvalidation",
+      "cloudfront:GetDistribution",
+      "cloudfront:GetInvalidation",
+    ]
     resources = ["arn:${data.aws_partition.current.partition}:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${var.frontend_distribution_id}"]
+  }
+
+  statement {
+    sid       = "DiscoverFrontendDistribution"
+    effect    = "Allow"
+    actions   = ["cloudfront:ListDistributions"]
+    resources = ["*"]
   }
 
   statement {

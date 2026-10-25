@@ -57,3 +57,8 @@ variable "lambda_function_arn" {
   description = "Función Lambda cuyo código puede actualizar CD."
   type        = string
 }
+
+variable "runtime_queue_arn" {
+  description = "Cola SQS que CD puede localizar para configurar la API."
+  type        = string
+}

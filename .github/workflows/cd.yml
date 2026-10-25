@@ -1,0 +1,307 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cd-dev
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER: ticketflow-dev
+  ECS_CLUSTER: ticketflow-dev
+  ECS_SERVICE: ticketflow-dev-ticket-worker
+  API_REPOSITORY: ticketflow-dev-api
+  WORKER_REPOSITORY: ticketflow-dev-worker
+  LAMBDA_FUNCTION: ticketflow-dev-dynamodb-audit
+  RDS_INSTANCE: ticketflow-dev-postgres
+  QUEUE_NAME: ticketflow-dev-ticket-generation
+  FRONTEND_BUCKET_PREFIX: ticketflow-dev-frontend
+
+jobs:
+  deploy:
+    name: Deploy dev
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: dev
+
+    steps:
+      - name: Select commit
+        id: commit
+        env:
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          commit_sha="${WORKFLOW_RUN_SHA:-${GITHUB_SHA}}"
+          echo "sha=${commit_sha}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${commit_sha:0:12}-amd64" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout validated commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.commit.outputs.sha }}
+
+      - name: Configure temporary AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: ticketflow-github-cd
+
+      - name: Discover sandbox resources
+        id: aws
+        run: |
+          set -euo pipefail
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+          registry="${account_id}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          frontend_bucket="${FRONTEND_BUCKET_PREFIX}-${account_id}"
+          distribution_id="$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='ticketflow-dev-frontend'].Id | [0]" \
+            --output text)"
+
+          test -n "$distribution_id"
+          test "$distribution_id" != "None"
+
+          echo "account_id=${account_id}" >> "$GITHUB_OUTPUT"
+          echo "registry=${registry}" >> "$GITHUB_OUTPUT"
+          echo "frontend_bucket=${frontend_bucket}" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=${distribution_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2.1.7
+
+      - name: Build and publish immutable images
+        env:
+          REGISTRY: ${{ steps.aws.outputs.registry }}
+          IMAGE_TAG: ${{ steps.commit.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+
+          publish_image() {
+            local name="$1"
+            local context="$2"
+            local repository="ticketflow-dev-${name}"
+            local image="${REGISTRY}/${repository}:${IMAGE_TAG}"
+
+            if aws ecr describe-images \
+              --repository-name "$repository" \
+              --image-ids imageTag="$IMAGE_TAG" >/dev/null 2>&1; then
+              echo "La imagen inmutable ya existe: ${image}"
+              return
+            fi
+
+            docker build \
+              --platform linux/amd64 \
+              --provenance=false \
+              --sbom=false \
+              --tag "$image" \
+              --file "${context}/Dockerfile" \
+              "$context"
+            docker push "$image"
+          }
+
+          publish_image api services/ticket-api
+          publish_image worker services/ticket-worker
+
+      - name: Package and deploy Lambda audit
+        run: |
+          set -euo pipefail
+          ./scripts/package-lambda-audit.sh
+          aws lambda update-function-code \
+            --function-name "$LAMBDA_FUNCTION" \
+            --zip-file fileb://services/lambda-audit/build/lambda-audit.zip \
+            --query 'LastUpdateStatus' \
+            --output text
+
+      - name: Deploy ECS worker
+        env:
+          WORKER_IMAGE: ${{ steps.aws.outputs.registry }}/${{ env.WORKER_REPOSITORY }}:${{ steps.commit.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          current_task="$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query 'services[0].taskDefinition' \
+            --output text)"
+
+          aws ecs describe-task-definition \
+            --task-definition "$current_task" \
+            --query taskDefinition \
+            --output json |
+          jq --arg image "$WORKER_IMAGE" '
+            .containerDefinitions |= map(
+              if .name == "ticket-worker" then .image = $image else . end
+            ) |
+            del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            )
+          ' > /tmp/ticketflow-worker-task.json
+
+          new_task="$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/ticketflow-worker-task.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)"
+
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "$new_task" >/dev/null
+
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
+
+      - name: Authorize this runner on the EKS endpoint
+        id: eks_access
+        run: |
+          set -euo pipefail
+          original="$(aws eks describe-cluster \
+            --name "$EKS_CLUSTER" \
+            --query 'cluster.resourcesVpcConfig.publicAccessCidrs' \
+            --output json)"
+          runner_ip="$(curl -4 -fsSL https://checkip.amazonaws.com | tr -d '[:space:]')/32"
+          merged="$(jq -r --arg runner "$runner_ip" '. + [$runner] | unique | join(",")' <<<"$original")"
+
+          echo "original=$(jq -r 'join(",")' <<<"$original")" >> "$GITHUB_OUTPUT"
+
+          update_id="$(aws eks update-cluster-config \
+            --name "$EKS_CLUSTER" \
+            --resources-vpc-config \
+              endpointPublicAccess=true,endpointPrivateAccess=true,publicAccessCidrs="$merged" \
+            --query 'update.id' \
+            --output text)"
+
+          aws eks wait cluster-active --name "$EKS_CLUSTER"
+          echo "EKS habilitado temporalmente para ${runner_ip}; update ${update_id}."
+
+      - name: Deploy API to EKS
+        env:
+          API_IMAGE: ${{ steps.aws.outputs.registry }}/${{ env.API_REPOSITORY }}:${{ steps.commit.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          aws eks update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$EKS_CLUSTER"
+
+          queue_url="$(aws sqs get-queue-url \
+            --queue-name "$QUEUE_NAME" \
+            --query QueueUrl \
+            --output text)"
+          rds_json="$(aws rds describe-db-instances \
+            --db-instance-identifier "$RDS_INSTANCE" \
+            --query 'DBInstances[0].{host:Endpoint.Address,secret:MasterUserSecret.SecretArn}' \
+            --output json)"
+          database_host="$(jq -r .host <<<"$rds_json")"
+          secret_arn="$(jq -r .secret <<<"$rds_json")"
+          api_security_group="$(aws ec2 describe-security-groups \
+            --filters Name=group-name,Values=ticketflow-dev-eks-api-sg \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text)"
+
+          cat > kubernetes/overlays/dev/runtime.env <<EOF
+          API_IMAGE=${API_IMAGE}
+          AWS_REGION=${AWS_REGION}
+          SQS_QUEUE_URL=${queue_url}
+          RDS_SECRET_ARN=${secret_arn}
+          DATABASE_HOST=${database_host}
+          DATABASE_PORT=5432
+          DATABASE_NAME=ticketflow
+          LOG_LEVEL=INFO
+          EKS_API_SECURITY_GROUP_ID=${api_security_group}
+          EOF
+
+          vpc_id="$(aws eks describe-cluster \
+            --name "$EKS_CLUSTER" \
+            --query 'cluster.resourcesVpcConfig.vpcId' \
+            --output text)"
+          helm repo add eks https://aws.github.io/eks-charts --force-update
+          helm upgrade --install aws-load-balancer-controller \
+            eks/aws-load-balancer-controller \
+            --namespace kube-system \
+            --version 3.6.0 \
+            --set clusterName="$EKS_CLUSTER" \
+            --set region="$AWS_REGION" \
+            --set vpcId="$vpc_id" \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=aws-load-balancer-controller \
+            --wait \
+            --timeout 5m
+
+          kubectl delete job ticketflow-api-migration \
+            --namespace ticketflow \
+            --ignore-not-found
+          kubectl apply -k kubernetes/overlays/dev
+          kubectl wait \
+            --for=condition=complete \
+            job/ticketflow-api-migration \
+            --namespace ticketflow \
+            --timeout=300s
+          kubectl rollout status deployment/ticketflow-api \
+            --namespace ticketflow \
+            --timeout=300s
+
+          alb_host="$(kubectl get ingress ticketflow-api \
+            --namespace ticketflow \
+            --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+          test -n "$alb_host"
+          curl --fail --retry 12 --retry-delay 10 \
+            "http://${alb_host}/health/ready"
+
+      - name: Restore EKS public access
+        if: always() && steps.eks_access.outputs.original != ''
+        env:
+          ORIGINAL_CIDRS: ${{ steps.eks_access.outputs.original }}
+        run: |
+          set -euo pipefail
+          aws eks wait cluster-active --name "$EKS_CLUSTER"
+          aws eks update-cluster-config \
+            --name "$EKS_CLUSTER" \
+            --resources-vpc-config \
+              endpointPublicAccess=true,endpointPrivateAccess=true,publicAccessCidrs="$ORIGINAL_CIDRS" \
+            >/dev/null
+          aws eks wait cluster-active --name "$EKS_CLUSTER"
+
+      - name: Build and publish frontend
+        env:
+          FRONTEND_BUCKET: ${{ steps.aws.outputs.frontend_bucket }}
+          DISTRIBUTION_ID: ${{ steps.aws.outputs.distribution_id }}
+        run: |
+          set -euo pipefail
+          npm ci --prefix services/frontend
+          npm run build --prefix services/frontend
+          aws s3 sync services/frontend/dist/ \
+            "s3://${FRONTEND_BUCKET}/" \
+            --delete
+          invalidation_id="$(aws cloudfront create-invalidation \
+            --distribution-id "$DISTRIBUTION_ID" \
+            --paths '/*' \
+            --query 'Invalidation.Id' \
+            --output text)"
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "$DISTRIBUTION_ID" \
+            --id "$invalidation_id"
+
+          domain="$(aws cloudfront get-distribution \
+            --id "$DISTRIBUTION_ID" \
+            --query 'Distribution.DomainName' \
+            --output text)"
+          curl --fail --retry 12 --retry-delay 10 \
+            "https://${domain}/" >/dev/null

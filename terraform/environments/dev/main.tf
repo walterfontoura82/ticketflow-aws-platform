@@ -262,4 +262,5 @@ module "github_oidc" {
   frontend_distribution_id = module.frontend.distribution_id
 
   lambda_function_arn = module.lambda_audit.function_arn
+  runtime_queue_arn   = module.queues.ticket_generation_queue_arn
 }
