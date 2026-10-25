@@ -5,7 +5,7 @@
 
 
 locals {
-  state_bucket_name = "ticketflow-tfstate-298367968222-us-east-1"
+  state_bucket_name = "ticketflow-tfstate-177603749039-us-east-1"
 }
 
 resource "aws_s3_bucket" "terraform_state" {
