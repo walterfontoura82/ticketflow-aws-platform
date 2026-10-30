@@ -86,6 +86,11 @@ resource "aws_instance" "this" {
 
   associate_public_ip_address = false
   iam_instance_profile        = aws_iam_instance_profile.this.name
+  lifecycle {
+    # La AMI más reciente se usa al crear la instancia, pero una actualización
+    # del parámetro SSM no debe reemplazar automáticamente la EC2 administrativa.
+    ignore_changes = [ami]
+  }
 
   metadata_options {
     http_endpoint               = "enabled"

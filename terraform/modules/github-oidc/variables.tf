@@ -8,9 +8,14 @@ variable "environment" {
   type        = string
 }
 
-variable "github_repository" {
-  description = "Repositorio autorizado en formato owner/repository."
-  type        = string
+variable "github_subjects" {
+  description = "Subjects OIDC exactos autorizados para asumir el rol."
+  type        = list(string)
+
+  validation {
+    condition     = length(var.github_subjects) > 0 && alltrue([for subject in var.github_subjects : startswith(subject, "repo:")])
+    error_message = "Debe configurarse al menos un subject OIDC de GitHub con prefijo repo:."
+  }
 }
 
 variable "ecr_repository_arns" {

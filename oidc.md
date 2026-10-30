@@ -145,16 +145,16 @@ dos condiciones importantes:
 aud = "sts.amazonaws.com"
 ```
 
-y alguno de estos sujetos:
+y este sujeto exacto:
 
 ```text
-repo:walterfontoura82/ticketflow-aws-platform:ref:refs/heads/main
-repo:walterfontoura82/ticketflow-aws-platform:environment:dev
+repo:walterfontoura82@106593513/ticketflow-aws-platform@1419988681:environment:dev
 ```
 
-Por lo tanto, otro repositorio o una rama diferente no puede asumir el rol.
-La segunda forma permite usar posteriormente un GitHub Environment llamado
-`dev`, con sus aprobaciones y reglas de protección.
+Los valores después de `@` son los IDs inmutables del propietario y del
+repositorio. Evitan que otro repositorio pueda asumir el rol aunque en el futuro
+reutilice los mismos nombres. El sufijo limita la confianza al GitHub
+Environment `dev`, con sus aprobaciones y reglas de protección.
 
 ### Rol de GitHub Actions
 

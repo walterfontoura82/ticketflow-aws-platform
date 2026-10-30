@@ -245,9 +245,11 @@ No almacena access keys: GitHub obtiene credenciales temporales mediante OIDC.
 module "github_oidc" {
   source = "../../modules/github-oidc"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  github_repository = "walterfontoura82/ticketflow-aws-platform"
+  project_name = var.project_name
+  environment  = var.environment
+  github_subjects = [
+    "repo:walterfontoura82@106593513/ticketflow-aws-platform@1419988681:environment:dev",
+  ]
 
   ecr_repository_arns = values(module.ecr.repository_arns)
 

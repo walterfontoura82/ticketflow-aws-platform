@@ -88,6 +88,10 @@ resource "aws_ecs_service" "this" {
   task_definition = aws_ecs_task_definition.this.arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
+  lifecycle {
+    # Terraform crea el servicio; CD administra las revisiones desplegadas.
+    ignore_changes = [task_definition]
+  }
 
   platform_version = "LATEST"
 
