@@ -98,6 +98,8 @@ if [[ "${OLD_ACCOUNT_ID}" == "${NEW_ACCOUNT_ID}" ]]; then
 fi
 
 readonly NEW_BUCKET="ticketflow-tfstate-${NEW_ACCOUNT_ID}-${REGION}"
+readonly OLD_BUCKET="ticketflow-tfstate-${OLD_ACCOUNT_ID}-${REGION}"
+MIGRATION_COMMITTED=false
 readonly TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 readonly RECOVERY_DIR="${BOOTSTRAP_DIR}/.sandbox-recovery/${OLD_ACCOUNT_ID}-${TIMESTAMP}"
 
@@ -137,12 +139,26 @@ replace_bucket_reference "${PROJECT_ROOT}/terraform.md" "${NEW_BUCKET}"
 readonly DISABLED_BACKEND="${BOOTSTRAP_DIR}/backend.tf.disabled"
 mv -- "${BOOTSTRAP_DIR}/backend.tf" "${DISABLED_BACKEND}"
 
-restore_backend_on_error() {
+rollback_before_apply() {
+  local exit_code=$?
+
   if [[ -f "${DISABLED_BACKEND}" && ! -f "${BOOTSTRAP_DIR}/backend.tf" ]]; then
     mv -- "${DISABLED_BACKEND}" "${BOOTSTRAP_DIR}/backend.tf"
   fi
+
+  if [[ "${MIGRATION_COMMITTED}" != "true" ]]; then
+    replace_bucket_reference "${BOOTSTRAP_DIR}/main.tf" "${OLD_BUCKET}"
+    replace_bucket_reference "${BOOTSTRAP_DIR}/backend.tf" "${OLD_BUCKET}"
+    replace_bucket_reference "${DEV_DIR}/backend.tf" "${OLD_BUCKET}"
+    replace_bucket_reference "${PROJECT_ROOT}/terraform.md" "${OLD_BUCKET}"
+  fi
+
+  return "${exit_code}"
 }
-trap restore_backend_on_error ERR INT TERM
+
+trap rollback_before_apply EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 info "Inicializando bootstrap con state local"
 terraform -chdir="${BOOTSTRAP_DIR}" init
@@ -166,7 +182,8 @@ info "Creando backend S3 nuevo"
 terraform -chdir="${BOOTSTRAP_DIR}" apply "${PLAN_FILE}"
 
 mv -- "${DISABLED_BACKEND}" "${BOOTSTRAP_DIR}/backend.tf"
-trap - ERR INT TERM
+MIGRATION_COMMITTED=true
+trap - EXIT INT TERM
 
 info "Migrando state local al backend S3"
 terraform -chdir="${BOOTSTRAP_DIR}" init -migrate-state -force-copy
