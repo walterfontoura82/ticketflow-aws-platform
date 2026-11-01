@@ -1,3 +1,4 @@
 # Falso positivo histórico: Security Group ficticio usado por el render CI.
 .github/workflows/ci.yml:generic-api-key:121
 kubernetes/overlays/dev/runtime.env:generic-api-key:9
+kubernetes/overlays/dev/runtime.env:generic-api-key:1
